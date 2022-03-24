@@ -1,0 +1,14 @@
+Bài 1: Lập trình chương trình có chức năng giống ‘rundll32.exe’
+của hệ thống
+RUNDLL32.EXE <dllname>,<entrypoint> <optional arguments>
+
+Bài 2: Lập trình 1 dll có chức năng khi được nạp lên hiển thị thông
+điệp: “Hi! Im a DLL”.
+
+Bài 3: Lập trình 1 dll export 2 function.
+ Function 1 nhận tham số đầu vào là 1 chuỗi ký tự, khi được gọi
+hiển thị thông điệp là chuỗi ký tự đã truyền vào
+ Function 2 nhận tham số đầu vào là tên file, khi được gọi ghi nội
+dung bất kỳ vào file đó
+
+Bài 4: Viết chương trình thực kiện 1 kỹ thuật inject dll bất kỳ
