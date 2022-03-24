@@ -1,0 +1,19 @@
+Bài 1: Lập trình ứng dụng có chức năng tương tự lệnh ‘tasklist’
+của Windows. Hai cột thông tin bắt buộc là ‘Image Name’ & ‘PID’, các cột
+khác có thể thay đổi bằng các thông tin có giá trị hơn.
+
+Bài 2: Lập trình ứng dụng có chức năng tương tự lệnh ‘taskkill’
+của Windows. Hỗ trợ 2 phương thức terminate process (theo Image
+name hoặc theo ProcessID), chỉ định phương thức qua tham số truyền
+vào chương trình.
+
+Bài 3: Viết chương trình mô phỏng cuộc thi chạy đua xử lý giữa 3
+Thread:
+ Thread 1: đếm số từ trong file 1.txt
+ Thread 2: đếm số file có trong thư mục hiện tại
+ Thread 3: đếm số thread của process ‘explorer.exe’
+Hiển thị ra màn hình thứ tự giải của 3 thread theo thời gian hoàn thành.
+Ví dụ:
+ Thread 2: Giải nhất
+ Thread 1: Giải nhì
+ Thread 3: Giải ba

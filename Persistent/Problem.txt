@@ -1,0 +1,10 @@
+Bài 01: Lập trình malware mô phỏng kỹ thuật ‘Modifying registry
+keys’
+
+Bài 02: Lập trình malware mô phỏng kỹ thuật ‘Task scheduler’
+
+Bài 03: Lập trình malware mô phỏng kỹ thuật ‘DLL search order
+hijacking’
+
+Bài 04: Lập trình malware mô phỏng kỹ thuật ‘WMI event
+subscription’

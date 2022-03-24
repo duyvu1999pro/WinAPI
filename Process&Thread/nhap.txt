@@ -1,0 +1,322 @@
+#include <windows.h>
+#include <tlhelp32.h>
+#include <tchar.h>
+#include <iostream>
+#include <iomanip>
+#include <comdef.h>
+#include <wchar.h>
+#include <stdio.h>
+#include <strsafe.h>
+
+
+#define BUFFER_SIZE 200
+using namespace std;
+
+BOOL GetProcessList();
+void killProcess(const char* filename);
+void killProcess(int Pid);
+int CountThread(DWORD dwOwnerPID);
+int CountFileCurrentDir();
+
+
+PROCESSENTRY32 FindProcess(const char* filename);
+void gotoxy(int x, int y);
+void printChar(const char* a);
+bool compare(WCHAR* input1, const char* input2);
+BOOL ListProcessThreads(DWORD dwOwnerPID);
+void GetFileList(TCHAR dir[]);
+
+
+
+
+int main()
+{
+   
+
+    return 0;
+}
+
+
+
+
+#pragma region hàm phụ
+void gotoxy(int x, int y)
+{
+    HANDLE h;
+    h = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD c = { x, y };
+    SetConsoleCursorPosition(h, c);
+}
+void printChar(const char* a)
+{
+    for (size_t i = 0; i < strlen(a); i++)
+    {
+        cout << a[i];
+    }
+}
+bool compare(WCHAR* input1, const char* input2)
+{
+    for (size_t i = 0; i < wcslen(input1); i++)
+    {
+        if ((int)input2[i] != input1[i])
+        {
+            return false;//khac
+        }
+    }
+    return true; //giong
+}
+PROCESSENTRY32 FindProcess(const char* filename)
+{
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    Process32First(hProcessSnap, &pe32);
+    while (1)
+    {
+        if (compare(pe32.szExeFile, filename))
+        {
+            return pe32;
+        }
+        if (!Process32Next(hProcessSnap, &pe32))
+            break;
+    }
+    return pe32;
+    CloseHandle(hProcessSnap);
+}
+#pragma endregion
+#pragma region hàm chính
+BOOL GetProcessList()
+{
+    HANDLE hProcessSnap;
+
+    PROCESSENTRY32 pe32;
+    hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE)
+    {
+        return(FALSE);
+    }
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    if (!Process32First(hProcessSnap, &pe32))
+    {
+        CloseHandle(hProcessSnap);
+        return(FALSE);
+    }
+    cout << "       Image Name" << setw(20) << "|" << setw(7) << "PID" << setw(5) << "|";
+    int RowIndex = 1;
+    Process32First(hProcessSnap, &pe32);
+    while (1)
+    {
+        //hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+        _tprintf(TEXT("\n%s"), pe32.szExeFile);
+        gotoxy(40, RowIndex); RowIndex++;
+        _tprintf(TEXT("%d"), pe32.th32ProcessID);
+        if (!Process32Next(hProcessSnap, &pe32))
+            break;
+    }
+    CloseHandle(hProcessSnap);
+    return(TRUE);
+}
+void killProcess(const char* filename)
+{
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    Process32First(hProcessSnap, &pe32);
+    while (1)
+    {
+        if (compare(pe32.szExeFile, filename))
+        {
+
+            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0, (DWORD)pe32.th32ProcessID);
+            if (hProcess != NULL)
+            {
+                TerminateProcess(hProcess, 9);
+                CloseHandle(hProcess);
+            }
+        }
+        if (!Process32Next(hProcessSnap, &pe32))
+            break;
+    }
+    CloseHandle(hProcessSnap);
+}
+void killProcess(int Pid)
+{
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    Process32First(hProcessSnap, &pe32);
+    while (1)
+    {
+        if (pe32.th32ProcessID == Pid)
+        {
+
+            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0, (DWORD)pe32.th32ProcessID);
+            if (hProcess != NULL)
+            {
+                TerminateProcess(hProcess, 9);
+                CloseHandle(hProcess);
+            }
+        }
+        if (!Process32Next(hProcessSnap, &pe32))
+            break;
+    }
+    CloseHandle(hProcessSnap);
+}
+int CountFileCurrentDir()
+{
+    int a = 0;
+    TCHAR CurrentDir[200];
+    GetCurrentDirectory(200, CurrentDir);
+    int length = _tcsclen(CurrentDir);
+    CurrentDir[length] = TEXT('\\');
+    CurrentDir[length + 1] = TEXT('*');
+    for (int i = length + 2; i < _tcsclen(CurrentDir); i++)
+    {
+        CurrentDir[i] = 0;
+    }
+    WIN32_FIND_DATA ffd;
+    HANDLE hFind = FindFirstFile(CurrentDir, &ffd);
+    while (1)
+    {
+        //_tprintf(TEXT("  %s  \n"), ffd.cFileName);
+        if (ffd.cFileName[0] != 46)
+        {
+            a++;
+        }
+        if (FindNextFile(hFind, &ffd) == 0)
+        {
+            break;
+        }
+    }
+
+    FindClose(hFind);
+    return a;
+}
+int CountThread(DWORD dwOwnerPID)
+{
+    int count = 0;
+    HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    THREADENTRY32 te32;
+    te32.dwSize = sizeof(THREADENTRY32);
+    Thread32First(hThreadSnap, &te32);
+    while (1)
+    {
+        if (te32.th32OwnerProcessID == dwOwnerPID)
+            count++;
+
+        if (!Thread32Next(hThreadSnap, &te32))
+            break;
+    }
+    return count;
+}
+
+
+#pragma endregion
+#pragma region hàm tham khảo
+BOOL ListProcessThreads(DWORD dwOwnerPID)
+{
+    HANDLE hThreadSnap = INVALID_HANDLE_VALUE;
+    THREADENTRY32 te32;
+    hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (hThreadSnap == INVALID_HANDLE_VALUE)
+        return(FALSE);
+    te32.dwSize = sizeof(THREADENTRY32);
+    if (!Thread32First(hThreadSnap, &te32))
+    {
+        CloseHandle(hThreadSnap);
+        return(FALSE);
+    }
+    do
+    {
+
+        if (te32.th32OwnerProcessID == dwOwnerPID)
+        {
+
+            _tprintf(TEXT("\n     THREAD ID      = 0x%08X"), te32.th32ThreadID);
+            _tprintf(TEXT("\n     base priority  = %d"), te32.tpBasePri);
+            _tprintf(TEXT("\n     delta priority = %d"), te32.tpDeltaPri);
+        }
+    } while (Thread32Next(hThreadSnap, &te32));
+
+    _tprintf(TEXT("\n"));
+
+
+    CloseHandle(hThreadSnap);
+    return(TRUE);
+}
+void GetFileList(TCHAR dir[])
+{
+    WIN32_FIND_DATA ffd;
+    HANDLE hFind = FindFirstFile(dir, &ffd);
+    while (1)
+    {
+
+        _tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
+        if (FindNextFile(hFind, &ffd) == 0)
+        {
+            break;
+        }
+    }
+
+    FindClose(hFind);
+}
+#pragma endregion
+
+#pragma region instruction comment 
+/*char* a = new char[30];
+   cout << endl << "cmd>taskkill ";
+   cin.getline(a, 80);
+   killProcess(a);*/
+
+   //ListProcessThreads(FindProcess("explorer.exe").th32ProcessID);
+     //cout<< CountThread(FindProcess("explorer.exe").th32ProcessID);
+
+//TCHAR szDir[MAX_PATH] = TEXT("C:\\Users\\ADMIN\\Desktop\\Reading");
+ // const char* a = "d";
+   // _tcscpy_s(szDir, _countof(szDir), TEXT( a));
+
+   // printf("Your current directory is: %S\n", szDir);
+//TCHAR infoBuf[BUFFER_SIZE];
+    //if (!GetCurrentDirectory(BUFFER_SIZE, infoBuf))
+    //    printf("GetCurrentDirectory() failed!\n");
+
+    //printf("Your current directory is: %S\n", infoBuf);
+
+
+//SYSTEMTIME sys = { 0 };
+//FILETIME ftCreationTime, ftExitTime, ftKernelTime, ftUserTime;
+//GetThreadTimes(GetCurrentThread(),
+//    &ftCreationTime, &ftExitTime, &ftKernelTime, &ftUserTime);
+//FileTimeToSystemTime(&ftCreationTime, &sys);
+//
+//cout << sys.wHour << ":" << sys.wMinute << ":" << sys.wSecond;
+//GetSystemTime(&sys);
+  
+//int x = 2;
+    //DWORD dwThreadID;
+    //SYSTEMTIME sys = { 0 };
+    //
+    //HANDLE hThread = CreateThread(NULL, 0, Thread, (PVOID)&x, 0, &dwThreadID);
+    //if (hThread == NULL)
+    //{        
+    //    ExitProcess(3);
+    //}
+    //else
+    //{
+    //      //WaitForMultipleObjects(MAX_THREADS, hThread, TRUE, INFINITE);
+    //    WaitForSingleObject(hThread, INFINITE);
+    //    cout <<  x;
+    //    FILETIME ftCreationTime, ftExitTime, ftKernelTime, ftUserTime;
+    //    GetThreadTimes(hThread, &ftCreationTime, &ftExitTime, &ftKernelTime, &ftUserTime);
+    //    FileTimeToSystemTime(&ftCreationTime, &sys);
+    // //   sys.wHour = sys.wHour * 1000;
+    //    cout << sys.wHour << ":" << sys.wMinute << ":" << sys.wSecond << ":" << sys.wMilliseconds;
+    //    FileTimeToSystemTime(&ftExitTime, &sys);
+    //   // sys.wHour = sys.wHour - sys.wHour;
+    //    cout << endl << sys.wHour << ":" << sys.wMinute << ":" << sys.wSecond << ":" << sys.wMilliseconds;
+    //    
+    //    CloseHandle(hThread);
+    //    
+    //    
+    //}
+#pragma endregion
